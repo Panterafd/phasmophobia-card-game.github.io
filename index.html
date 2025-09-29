@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Phasmophobia Card Game</title>
+<link rel="icon" type="image/png" href="11111.png">
+<style>
+  :root{
+    --bg:#000;
+    --text:#fff;
+    --muted:#bdbdbd;
+    --accent:#9be2ff;
+    --danger:#ff4d4d;
+    --card-bg:#111;
+    --card-border:#333;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 10% 10%, rgba(50,50,50,0.06), transparent),
+                linear-gradient(180deg, rgba(0,0,0,1), rgba(5,5,5,1));
+    color:var(--text);
+  }
+
+  .app{
+    min-height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:36px;
+    box-sizing:border-box;
+  }
+
+  .panel{
+    width:100%;
+    max-width:920px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:12px;
+    padding:20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+    border:1px solid rgba(255,255,255,0.03);
+  }
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  h1{
+    margin:0;
+    font-size:20px;
+    letter-spacing:0.6px;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  .top-row{
+    display:flex;
+    gap:12px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+
+  .controls{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+
+  button{
+    background:transparent;
+    border:1px solid var(--card-border);
+    color:var(--text);
+    padding:10px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  button:hover{ transform:translateY(-2px); }
+  button:active{ transform:translateY(0); }
+  button.primary{
+    background:linear-gradient(180deg, rgba(155,226,255,0.06), rgba(155,226,255,0.03));
+    border-color: rgba(155,226,255,0.18);
+  }
+  button.danger{
+    background: linear-gradient(180deg, rgba(255,77,77,0.06), rgba(255,77,77,0.03));
+    border-color: rgba(255,77,77,0.18);
+  }
+  button:disabled{
+    opacity:0.35;
+    cursor:not-allowed;
+    transform:none;
+  }
+
+  .status{
+    margin-left:auto;
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+
+  .counter{
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.02);
+    padding:8px 12px;
+    border-radius:8px;
+    min-width:120px;
+    text-align:center;
+  }
+  .counter .label{ font-size:12px; color:var(--muted); }
+  .counter .value{ font-size:18px; font-weight:700; margin-top:4px; }
+
+  .game-area{
+    display:flex;
+    gap:18px;
+    margin-top:20px;
+    align-items:flex-start;
+  }
+
+  .deck-area{
+    width:320px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    align-items:center;
+  }
+
+  .card{
+    width:260px;
+    height:150px;
+    border-radius:10px;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    position:relative;
+    overflow:hidden;
+    transition:transform 300ms ease, box-shadow 300ms ease;
+  }
+  .card.big{ width:100%; height:220px; }
+  .card.drawn{
+    transform:translateY(-10px) rotate(-1deg);
+    box-shadow: 0 14px 40px rgba(0,0,0,0.75);
+  }
+  .card .type{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .card .name{ font-size:20px; font-weight:800; margin-top:6px; text-align:center; }
+
+  .clues{
+    width:100%;
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.02);
+    padding:12px;
+    border-radius:10px;
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .clue{
+    padding:8px 10px;
+    border-radius:8px;
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.02);
+    font-weight:700;
+    font-size:13px;
+  }
+
+  .log{
+    flex:1;
+    min-height:220px;
+    background:rgba(255,255,255,0.015);
+    border-radius:10px;
+    padding:12px;
+    border:1px solid rgba(255,255,255,0.02);
+    overflow:auto;
+  }
+  .log-entry{
+    margin-bottom:8px;
+    font-size:13px;
+  }
+  .log-entry.time{ color:var(--muted); font-size:12px; margin-right:8px; }
+  .log-entry.event{ color:var(--text); }
+
+  .danger-msg{
+    color:var(--danger);
+    font-weight:800;
+    background: rgba(255,77,77,0.04);
+    border:1px solid rgba(255,77,77,0.06);
+    padding:8px 10px;
+    border-radius:8px;
+    display:inline-block;
+  }
+
+  footer{
+    margin-top:16px;
+    color:var(--muted);
+    font-size:13px;
+    text-align:center;
+  }
+
+  /* small screens */
+  @media (max-width:720px){
+    .game-area{ flex-direction:column; align-items:stretch; }
+    .deck-area{ width:100%; }
+    .status{ margin-left:0; }
+  }
+
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="panel" role="main" aria-live="polite">
+      <header>
+        <div>
+          <h1>Phasmophobia — Card Game</h1>
+          <div class="subtitle">Собери 3 разные улики или выживи, пока угроза не достигнет 5.</div>
+        </div>
+
+        <div class="status" aria-hidden="false">
+          <div class="counter" title="Количество разных улик">
+            <div class="label">Улики (разные)</div>
+            <div id="clue-count" class="value">0</div>
+          </div>
+          <div class="counter" title="Уровень угрозы">
+            <div class="label">Угроза</div>
+            <div id="threat-count" class="value">0</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="top-row">
+        <div class="controls">
+          <button id="draw-btn" class="primary">Тянуть карту</button>
+          <button id="new-btn">Новая игра</button>
+        </div>
+
+        <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+          <div style="text-align:right;">
+            <div style="color:var(--muted); font-size:12px;">Колода</div>
+            <div id="deck-size" style="font-weight:700; font-size:16px;">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-area">
+        <div class="deck-area">
+          <div class="card big" id="current-card" aria-live="polite" aria-atomic="true">
+            <div class="type" id="card-type">—</div>
+            <div class="name" id="card-name">Нажми "Тянуть карту"</div>
+          </div>
+
+          <div style="width:100%;">
+            <div style="margin-bottom:8px; color:var(--muted); font-size:13px;">Собранные улики</div>
+            <div id="clues" class="clues" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="log" id="log" tabindex="0" aria-label="Лог событий"></div>
+      </div>
+
+      <footer>
+        <div id="message-area"></div>
+      </footer>
+    </div>
+  </div>
+
+<script>
+/*
+  Phasmophobia Card Game
+  - One-file game.
+  - Clue cards add unique clues.
+  - Event cards increase threat; "Ghost attacks" produces red message.
+  - Win: 3 different clues. Lose: threat >= 5.
+*/
+
+(function(){
+  // Card definitions
+  const CLUES = [
+    "Фонарик",
+    "EMF",
+    "Камера",
+    "Распятие",
+    "Блокнот"
+  ];
+
+  const EVENTS = [
+    { name: "Шум", danger:false },
+    { name: "Мигание света", danger:false },
+    { name: "Призрак атакует", danger:true },
+    { name: "Дверь захлопнулась", danger:false }
+  ];
+
+  // Build deck with multiple copies for better playability
+  function buildDeck(){
+    const deck = [];
+    // Add more clue copies (2 copies each)
+    CLUES.forEach(name=>{
+      deck.push({type:'clue', name});
+      deck.push({type:'clue', name});
+    });
+    // Add event copies (3 each)
+    EVENTS.forEach(ev=>{
+      deck.push({type:'event', name:ev.name, danger:ev.danger});
+      deck.push({type:'event', name:ev.name, danger:ev.danger});
+      deck.push({type:'event', name:ev.name, danger:ev.danger});
+    });
+    return shuffle(deck);
+  }
+
+  // Fisher-Yates shuffle
+  function shuffle(arr){
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // State
+  let deck = [];
+  let discard = [];
+  let cluesSet = new Set();
+  let threat = 0;
+  let gameOver = false;
+
+  // DOM
+  const drawBtn = document.getElementById('draw-btn');
+  const newBtn = document.getElementById('new-btn');
+  const cardTypeEl = document.getElementById('card-type');
+  const cardNameEl = document.getElementById('card-name');
+  const currentCardEl = document.getElementById('current-card');
+  const cluesEl = document.getElementById('clues');
+  const logEl = document.getElementById('log');
+  const clueCountEl = document.getElementById('clue-count');
+  const threatCountEl = document.getElementById('threat-count');
+  const deckSizeEl = document.getElementById('deck-size');
+  const messageArea = document.getElementById('message-area');
+
+  // Initialize game
+  function initGame(){
+    deck = buildDeck();
+    discard = [];
+    cluesSet.clear();
+    threat = 0;
+    gameOver = false;
+    updateUI();
+    clearLog();
+    logEvent("Игра начата. Удачной охоты, охотник!");
+    setCardPlaceholder();
+    enableControls(true);
+    messageArea.innerHTML = "";
+  }
+
+  function setCardPlaceholder(){
+    cardTypeEl.textContent = "Колода";
+    cardNameEl.textContent = "Нажми \"Тянуть карту\"";
+    currentCardEl.classList.remove('drawn');
+  }
+
+  function enableControls(enabled){
+    drawBtn.disabled = !enabled;
+    newBtn.disabled = false;
+  }
+
+  function clearLog(){ logEl.innerHTML = ""; }
+
+  function logEvent(text, type){
+    const time = new Date().toLocaleTimeString();
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    if(type === 'danger'){
+      entry.innerHTML = `<span class="time">[${time}]</span> <span class="event danger-msg">${escapeHtml(text)}</span>`;
+    } else {
+      entry.innerHTML = `<span class="time">[${time}]</span> <span class="event">${escapeHtml(text)}</span>`;
+    }
+    logEl.prepend(entry);
+  }
+
+  // Draw card
+  function drawCard(){
+    if(gameOver) return;
+    if(deck.length === 0){
+      // reshuffle discard into deck
+      deck = shuffle(discard.slice());
+      discard = [];
+      logEvent("Колода закончилась. Перетасовываем сброшенные карты.");
+    }
+    const card = deck.pop();
+    discard.push(card);
+    showCard(card);
+    applyCard(card);
+    updateUI();
+    checkEndgame();
+  }
+
+  function showCard(card){
+    currentCardEl.classList.add('drawn');
+    cardTypeEl.textContent = card.type === 'clue' ? "Улика" : "Событие";
+    cardNameEl.textContent = card.name;
+    // gentle animation reset after short delay
+    setTimeout(()=> currentCardEl.classList.remove('drawn'), 800);
+  }
+
+  function applyCard(card){
+    if(card.type === 'clue'){
+      // add to set
+      const before = cluesSet.size;
+      cluesSet.add(card.name);
+      const after = cluesSet.size;
+      if(after > before){
+        logEvent(`Найдена новая улика: ${card.name}.`);
+      } else {
+        logEvent(`Улика ${card.name} (уже собрана).`);
+      }
+    } else if(card.type === 'event'){
+      // increase threat
+      threat++;
+      if(card.danger){
+        logEvent(`! Атака! ${card.name} — получено повреждение.`, 'danger');
+      } else {
+        logEvent(`Событие: ${card.name}.`);
+      }
+    }
+  }
+
+  function checkEndgame(){
+    if(cluesSet.size >= 3){
+      win();
+    } else if(threat >= 5){
+      lose();
+    }
+  }
+
+  function win(){
+    gameOver = true;
+    updateUI();
+    logEvent("Победа — вы собрали 3 разные улики! Возвращайся в базу.", "win");
+    messageArea.innerHTML = `<div style="color:var(--accent); font-weight:800;">Победа! Вы разоблачили призрака.</div>`;
+    enableControls(false);
+    drawBtn.disabled = true;
+  }
+
+  function lose(){
+    gameOver = true;
+    updateUI();
+    logEvent("Поражение — уровень угрозы достиг критической отметки.", "lose");
+    messageArea.innerHTML = `<div style="color:var(--danger); font-weight:900;">Вы проиграли — слишком много угроз. Убегай!</div>`;
+    enableControls(false);
+    drawBtn.disabled = true;
+  }
+
+  function updateUI(){
+    clueCountEl.textContent = cluesSet.size;
+    threatCountEl.textContent = threat;
+    deckSizeEl.textContent = deck.length;
+    // update clues list
+    cluesEl.innerHTML = "";
+    if(cluesSet.size === 0){
+      const span = document.createElement('div');
+      span.style.color = 'var(--muted)';
+      span.style.fontSize = '13px';
+      span.textContent = "Пока нет собранных улик";
+      cluesEl.appendChild(span);
+    } else {
+      Array.from(cluesSet).forEach(c=>{
+        const el = document.createElement('div');
+        el.className = 'clue';
+        el.textContent = c;
+        cluesEl.appendChild(el);
+      });
+    }
+    // if gameOver, disable draw
+    drawBtn.disabled = gameOver;
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, s=>{
+      const map = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' };
+      return map[s];
+    });
+  }
+
+  // Button handlers
+  drawBtn.addEventListener('click', ()=>{
+    drawCard();
+  });
+
+  newBtn.addEventListener('click', ()=>{
+    initGame();
+  });
+
+  // keyboard: space to draw
+  document.addEventListener('keydown', (e)=>{
+    if(e.code === 'Space'){
+      if(!drawBtn.disabled){
+        e.preventDefault();
+        drawCard();
+      }
+    }
+  });
+
+  // start
+  initGame();
+
+})();
+</script>
+</body>
+</html>
